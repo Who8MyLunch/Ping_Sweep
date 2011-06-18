@@ -25,15 +25,16 @@ import socket
 import random
 
 import dpkt
-import pvlib # used only for the percentile function imported from Scipy.
-
-# TODO: factor out dependenciies on pvlib.
 
 
 # Helper functions.
 def percentile(data, P):
-
-    return pvlib.stats.percentile(data, P)
+    data.sort()
+    
+    ix = P*len(data)
+    val = data[ix]
+        
+    return val
 
 
 def now():
@@ -305,6 +306,4 @@ if __name__ == '__main__':
     #
     stats_sweep = ping_sweep(host_name, count_send=25, time_pause=5.)
 
-
     pretty_results(stats_sweep)
-
