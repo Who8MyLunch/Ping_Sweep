@@ -178,7 +178,7 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
         count_send = 25
         
     if timeout is None:
-        timeout = 5000.  # ms
+        timeout = 1000.  # ms
         
     # Make a socket, send a sequence of pings.
     sock = create_socket(host_name, timeout=timeout/1000.)   # note: timeout in seconds, not milliseconds.
@@ -281,7 +281,7 @@ def display_results_header(stats):
     P = stats['P']
 
     # Header string.
-    head_top = '  Packet   Percentile Times (ms)              Lost Packets'
+    head_top = '  Packet   Percentile Times (ms)               Lost Packets'
     head_bot = '   Size '
     for p in P:
         head_bot += ' %6.2f' % p
