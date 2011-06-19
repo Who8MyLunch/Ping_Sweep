@@ -2,6 +2,9 @@
 I wrote this application to help diagnose some odd network connectivity problems on my home network.
 The basic idea is to ping to a remote host with increasingly larger packets.  As of right now, the 
 packet sizes start at 16 bytes and increase by factors of two up 32 bytes.
+
+Note: This module relies upon the use of raw sockets.  You will need to run with elevated administrator
+permissions on Windows.  I'm not sure about Linux.
  
 Summary results are generated for various percentiles of the ping times and number of packets lost.
 Packets are considered lost for two reasons: socket timeout or corrupted payload on the echo packet.
