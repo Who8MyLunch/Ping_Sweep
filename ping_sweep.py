@@ -19,6 +19,7 @@
 
 from __future__ import division, print_function #, unicode_literals
 
+import argparse
 import os
 import sys
 import time
@@ -323,22 +324,22 @@ def display_results_line(stats):
     
 
 if __name__ == '__main__':
-    # Example useage.
+    # Parse command line arguments.
+    # desc = 'ping target host with ECHO packets having a range of sizes.'
+    parser = argparse.ArgumentParser()
 
-    if len(sys.argv) > 1:
-        host_name = sys.argv[1]
-    else:
-        # host_name = 'www.google.com'
-        host_name = '192.168.1.254'
-        # host_name = 'shrike'
-        # host_name = 'vulture'
-        # host_name = 'purple-martin'
+    parser.add_argument('host_name', action='store',
+                        help='Name or IP address of host to ping')
+                        
+    parser.add_argument('--count', action='store', type=int, default=25,
+                        help='Number of pings at each packet size')
+
+
+    args = parser.parse_args()
 
     size_sweep = [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
-    # size_sweep = [2048, 4090, 4093, 4096, 4099, 4102]
-    # size_sweep = [16, 32, 64, 128, 256, 512, 1024, 2048, 8192, 16384, 32768]
+    # # size_sweep = [2048, 4090, 4093, 4096, 4099, 4102]
+    # # size_sweep = [16, 32, 64, 128, 256, 512, 1024, 2048, 8192, 16384, 32768]
 
-    count_send = 25
-    
-    # Do it: sequence of pings over range of packet sizes.
-    stats_sweep = ping_sweep(host_name, size_sweep=size_sweep, count_send=count_send, verbosity=True)
+    # # Do it: sequence of pings over range of packet sizes.
+    stats_sweep = ping_sweep(args.host_name, size_sweep=size_sweep, count_send=args.count, verbosity=True)
