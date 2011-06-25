@@ -17,6 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""Perform a sequence of pings over a range of payload sizes
+"""
+
 from __future__ import division, print_function #, unicode_literals
 
 import argparse
@@ -218,9 +221,13 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
     # num_packets = len(times)
     data_size = results[0]['data_size']
 
-    P = [0.00, 0.25, 0.50, 0.75, 1.00]
+    P = [0.00, 0.25, 0.50, 1.00]
     P_times = percentile(times, P)
 
+    # Subtract minimum time from later values.
+    for k in range(1, len(P_times)):
+        P_times[k] -= P_times[0]
+    
     stats = {'host_name':host_name,
              'data_size':data_size,
              'times':times,
@@ -272,22 +279,20 @@ def display_results_header(stats):
     print()
     print(' Ping Sweep')
     print(' ==========')
-    print(' target name:  %s' % stats['host_name'])
-    print(' ping count:   %d' % stats['count_send'])
-    print(' sock timeout: %d ms' % stats['timeout'])
-    print(' pause time:   %d ms' % stats['time_pause'])
+    print(' target name: %s' % stats['host_name'])
+    print(' ping count:  %d' % stats['count_send'])
+    print(' timeout:     %d ms' % stats['timeout'])
+    print(' pause time:  %d ms' % stats['time_pause'])
     print()
     
     # Percentiles.
     P = stats['P']
 
-    # Header string.
-    head_top = '  Packet   Percentile Times (ms)               Lost Packets'
-    head_bot = '   Size '
-    for p in P:
-        head_bot += ' %6.2f' % p
-    head_bot += '    All [ T / C ]'
-
+    # Header strings.
+    head_top = ' Payload |  Min. | Percentile Delta (ms) | Lost'
+    head_bot = ' (bytes) |  (ms) |  %4.2f   %4.2f   %4.2f   | All  T   C '
+    head_bot = head_bot % tuple(P[1:]) 
+    
     print(head_top)
     print(head_bot)
 
@@ -301,11 +306,7 @@ def display_results_line(stats):
     Generate line of text for current set of results.
     """
     # Line output.
-    template = ' %5d  '
-    for p in stats['P']:
-        template += ' %6.2f'
-
-    template += '   %3d  %3d %3d'
+    template = ' %5d   |%6.2f |%6.2f %6.2f %6.2f   |%3d %3d %3d'
 
     num_bytes = stats['data_size']
 
@@ -325,7 +326,6 @@ def display_results_line(stats):
 
 if __name__ == '__main__':
     # Parse command line arguments.
-    # desc = 'ping target host with ECHO packets having a range of sizes.'
     parser = argparse.ArgumentParser()
 
     parser.add_argument('host_name', action='store',
@@ -337,9 +337,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    # Should this argument also be handled by argparse??
     size_sweep = [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
     # # size_sweep = [2048, 4090, 4093, 4096, 4099, 4102]
     # # size_sweep = [16, 32, 64, 128, 256, 512, 1024, 2048, 8192, 16384, 32768]
 
-    # # Do it: sequence of pings over range of packet sizes.
+    # Do it: sequence of pings over range of packet sizes.
     stats_sweep = ping_sweep(args.host_name, size_sweep=size_sweep, count_send=args.count, verbosity=True)
