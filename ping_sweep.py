@@ -331,8 +331,14 @@ if __name__ == '__main__':
     parser.add_argument('host_name', action='store',
                         help='Name or IP address of host to ping')
                         
-    parser.add_argument('--count', action='store', type=int, default=25,
-                        help='Number of pings at each packet size')
+    parser.add_argument( '-c', '--count', action='store', type=int, default=25,
+                        help='Number of pings at each packet payload size')
+
+    parser.add_argument('-p', '--pause', action='store', type=float, default=5.,
+                        help='Pause time between individual pings (ms)')
+
+    parser.add_argument('-t' ,'--timeout', action='store', type=float, default=1000.,
+                        help='Socket timeout (ms)')
 
 
     args = parser.parse_args()
@@ -343,4 +349,9 @@ if __name__ == '__main__':
     # # size_sweep = [16, 32, 64, 128, 256, 512, 1024, 2048, 8192, 16384, 32768]
 
     # Do it: sequence of pings over range of packet sizes.
-    stats_sweep = ping_sweep(args.host_name, size_sweep=size_sweep, count_send=args.count, verbosity=True)
+    stats_sweep = ping_sweep(args.host_name, 
+                             size_sweep=size_sweep,
+                             count_send=args.count, 
+                             time_pause=args.pause,
+                             timeout=args.timeout,
+                             verbosity=True)
