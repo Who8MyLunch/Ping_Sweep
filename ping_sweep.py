@@ -322,7 +322,6 @@ def display_results_line(stats):
 
     print(template % val)
     
-    
 
 if __name__ == '__main__':
     # Parse command line arguments.
@@ -339,7 +338,6 @@ if __name__ == '__main__':
 
     parser.add_argument('-t' ,'--timeout', action='store', type=float, default=1000.,
                         help='Socket timeout (ms)')
-
 
     args = parser.parse_args()
 
