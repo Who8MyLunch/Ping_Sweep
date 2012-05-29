@@ -4,7 +4,7 @@ use_setuptools()
 
 from setuptools import setup, find_packages
 
-entry_points = {'console_scripts': ['ping_sweep = pydistbox.distbox:main',
+entry_points = {'console_scripts': ['ping_sweep = ping_sweep:main',
                                     ]
                 }
 
@@ -13,7 +13,7 @@ version = '2012.05.29'
 description = 'Ping return time analysis tool'
 
 # Do it.
-setup(name='PyDistBox',
+setup(name='ping_sweep',
       packages=find_packages(),
       
       entry_points=entry_points,
