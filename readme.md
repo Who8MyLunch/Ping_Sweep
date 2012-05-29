@@ -19,11 +19,11 @@ This application relies upon the dpkt python package (http://code.google.com/p/d
 It is included here as a subfolder.
 
 Initial inspiration came from various sources:
-http://www.doughellmann.com/PyMOTW/asyncore/
-http://www.commercialventvac.com/dpkt.html
-http://jon.oberheide.org/blog/2008/08/25/dpkt-tutorial-1-icmp-echo/
-http://www.python-forum.de/viewtopic.php?p=183720
-http://code.activestate.com/recipes/576662/
+- http://www.doughellmann.com/PyMOTW/asyncore/
+- http://www.commercialventvac.com/dpkt.html
+- http://jon.oberheide.org/blog/2008/08/25/dpkt-tutorial-1-icmp-echo/
+- http://www.python-forum.de/viewtopic.php?p=183720
+- http://code.activestate.com/recipes/576662/
 
 In the end I implemented this framework on my own to meet the needs of my particular problems while
 diagnosing my home network LAN.
@@ -35,33 +35,32 @@ Examples
 Here is an example of the text output when I target my PC upstairs where I suspected problems with my
 ethernet cables in the closet:
 
-`
-C:\Projects\ping_sweep> .\ping_sweep.py shrike
 
- Ping Sweep
- ==========
- target name: shrike
- ping count:  25
- timeout:     1000 ms
- pause time:  5 ms
+    C:\Projects\ping_sweep> .\ping_sweep.py shrike
 
- Payload |  Min. | Percentile Delta (ms) | Lost
- (bytes) |  (ms) |  0.25   0.50   1.00   | All  T   C
- -----------------------------------------------------
-     8   |  0.95 |  0.12   0.16   4.42   |  0   0   0
-    16   |  0.99 |  0.02   0.06   1.84   |  0   0   0
-    32   |  1.01 |  0.05   0.08   2.09   |  0   0   0
-    64   |  1.03 |  0.06   0.07  10.05   |  0   0   0
-   128   |  1.09 |  0.05   0.09   2.85   |  0   0   0
-   256   |  1.19 |  0.04   0.09   5.47   |  0   0   0
-   512   |  1.39 |  0.09   0.14   2.80   |  1   1   0
-  1024   |  1.80 |  0.09   0.15   2.68   |  1   1   0
-  2048   |  2.48 |  0.22   0.36   2.36   |  1   1   0
-  4096   |  3.51 |  0.25   0.46   4.98   |  0   0   0
-  8192   |  6.38 |  0.25   0.73   3.42   | 10  10   0
- 16384   | 10.59 |  1.08   1.82  10.66   | 15  15   0
- 32768   | 19.52 |  0.68   2.14   4.26   | 17  17   0
-`
+     Ping Sweep
+     ==========
+     target name: shrike
+     ping count:  25
+     timeout:     1000 ms
+     pause time:  5 ms
+
+     Payload |  Min. | Percentile Delta (ms) | Lost
+     (bytes) |  (ms) |  0.25   0.50   1.00   | All  T   C
+     -----------------------------------------------------
+         8   |  0.95 |  0.12   0.16   4.42   |  0   0   0
+        16   |  0.99 |  0.02   0.06   1.84   |  0   0   0
+        32   |  1.01 |  0.05   0.08   2.09   |  0   0   0
+        64   |  1.03 |  0.06   0.07  10.05   |  0   0   0
+       128   |  1.09 |  0.05   0.09   2.85   |  0   0   0
+       256   |  1.19 |  0.04   0.09   5.47   |  0   0   0
+       512   |  1.39 |  0.09   0.14   2.80   |  1   1   0
+      1024   |  1.80 |  0.09   0.15   2.68   |  1   1   0
+      2048   |  2.48 |  0.22   0.36   2.36   |  1   1   0
+      4096   |  3.51 |  0.25   0.46   4.98   |  0   0   0
+      8192   |  6.38 |  0.25   0.73   3.42   | 10  10   0
+     16384   | 10.59 |  1.08   1.82  10.66   | 15  15   0
+     32768   | 19.52 |  0.68   2.14   4.26   | 17  17   0
  
  
 Next here below is a nice result where I target my WiFi router to which I am directly connected
