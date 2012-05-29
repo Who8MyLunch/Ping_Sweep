@@ -31,6 +31,8 @@ import random
 
 import dpkt
 
+import win32api
+import win32com.shell.shell
 
 # Helper functions.
 def percentile(data, P):
@@ -322,8 +324,10 @@ def display_results_line(stats):
 
     print(template % val)
     
-
-if __name__ == '__main__':
+    
+    
+def main():
+    
     # Parse command line arguments.
     parser = argparse.ArgumentParser()
 
@@ -346,10 +350,21 @@ if __name__ == '__main__':
     # # size_sweep = [2048, 4090, 4093, 4096, 4099, 4102]
     # # size_sweep = [16, 32, 64, 128, 256, 512, 1024, 2048, 8192, 16384, 32768]
 
-    # Do it: sequence of pings over range of packet sizes.
-    stats_sweep = ping_sweep(args.host_name, 
-                             size_sweep=size_sweep,
-                             count_send=args.count, 
-                             time_pause=args.pause,
-                             timeout=args.timeout,
-                             verbosity=True)
+    # This only runs with admin privileges.
+    if win32com.shell.shell.IsUserAnAdmin():
+        # Ok good.  Run the application: sequence of pings over range of packet sizes.
+        stats_sweep = ping_sweep(args.host_name, 
+                                 size_sweep=size_sweep,
+                                 count_send=args.count, 
+                                 time_pause=args.pause,
+                                 timeout=args.timeout,
+                                 verbosity=True)
+    else:
+        raise Exception('This application requires admin privileges.')
+        
+    # Done.
+    
+                             
+if __name__ == '__main__':
+    main()
+    
