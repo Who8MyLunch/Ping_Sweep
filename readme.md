@@ -1,4 +1,10 @@
 
+Ping Sweep
+==========
+
+What and Why
+------------
+
 I wrote this application to help diagnose some odd network connectivity problems on my home network.
 The basic idea is to ping to a remote host with increasingly larger packets.  As of right now, the 
 packet sizes start at 16 bytes and increase by factors of two up 32 bytes.
@@ -23,9 +29,13 @@ In the end I implemented this framework on my own to meet the needs of my partic
 diagnosing my home network LAN.
 
 
-Here is an example of the text output when I target my PC upstairs where I suspect problems with my
+Examples
+--------
+
+Here is an example of the text output when I target my PC upstairs where I suspected problems with my
 ethernet cables in the closet:
 
+`
 C:\Projects\ping_sweep> .\ping_sweep.py shrike
 
  Ping Sweep
@@ -51,7 +61,7 @@ C:\Projects\ping_sweep> .\ping_sweep.py shrike
   8192   |  6.38 |  0.25   0.73   3.42   | 10  10   0
  16384   | 10.59 |  1.08   1.82  10.66   | 15  15   0
  32768   | 19.52 |  0.68   2.14   4.26   | 17  17   0
-
+`
  
  
 Next here below is a nice result where I target my WiFi router to which I am directly connected
