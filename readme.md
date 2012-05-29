@@ -7,18 +7,15 @@ What and Why
 
 I wrote this application to help diagnose some odd network connectivity problems on my home network.
 The basic idea is to ping to a remote host with increasingly larger packets.  As of right now, the 
-packet sizes start at 16 bytes and increase by factors of two up 32 bytes.
+packet sizes start at 16 bytes and increase by factors of two up 32 bytes.  Summary results are
+generated for various percentiles of the ping times and number of packets lost.  Packets are considered
+lost for two reasons: socket timeout or corrupted payload on the echo packet.  
 
-Note: This module relies upon the use of raw sockets.  You will need to run with elevated administrator
-permissions on Windows.  I'm not sure about Linux.
- 
-Summary results are generated for various percentiles of the ping times and number of packets lost.
-Packets are considered lost for two reasons: socket timeout or corrupted payload on the echo packet.
+This application relies upon the dpkt python package (http://code.google.com/p/dpkt/).  It is included
+here as a subfolder.  Finally, this module relies upon the use of raw sockets.  You will need to run
+with elevated administrator permissions on Windows.  I'm not sure about Linux.
 
-This application relies upon the dpkt python package (http://code.google.com/p/dpkt/).
-It is included here as a subfolder.
-
-Initial inspiration came from various sources:
+Initial inspiration for this tool came from various sources:
 - http://www.doughellmann.com/PyMOTW/asyncore/
 - http://www.commercialventvac.com/dpkt.html
 - http://jon.oberheide.org/blog/2008/08/25/dpkt-tutorial-1-icmp-echo/
@@ -63,35 +60,35 @@ ethernet cables in the closet:
      32768   | 19.52 |  0.68   2.14   4.26   | 17  17   0
  
  
-Next here below is a nice result where I target my WiFi router to which I am directly connected
+Next below is a nice result where I target my WiFi router to which I am directly connected
 now on my laptop.  There are still the occasional delayed packets, but not as many as above,
 and all packets made the round trip just fine.
  
-C:\Projects\ping_sweep> .\ping_sweep.py 192.168.1.254
+    C:\Projects\ping_sweep> .\ping_sweep.py 192.168.1.254
 
- Ping Sweep
- ==========
- target name: 192.168.1.254
- ping count:  25
- timeout:     1000 ms
- pause time:  5 ms
+     Ping Sweep
+     ==========
+     target name: 192.168.1.254
+     ping count:  25
+     timeout:     1000 ms
+     pause time:  5 ms
 
- Payload |  Min. | Percentile Delta (ms) | Lost
- (bytes) |  (ms) |  0.25   0.50   1.00   | All  T   C
- -----------------------------------------------------
-     8   |  0.93 |  0.09   0.19   2.00   |  0   0   0
-    16   |  0.95 |  0.08   0.36   1.34   |  0   0   0
-    32   |  0.95 |  0.06   0.22   1.85   |  0   0   0
-    64   |  0.98 |  0.11   0.28  10.84   |  0   0   0
-   128   |  0.99 |  0.07   0.12   1.87   |  0   0   0
-   256   |  1.04 |  0.09   0.20   2.26   |  0   0   0
-   512   |  1.11 |  0.14   0.28   2.34   |  0   0   0
-  1024   |  1.17 |  0.20   0.25   1.45   |  0   0   0
-  2048   |  1.92 |  0.42   0.55   1.58   |  0   0   0
-  4096   |  2.99 |  0.24   0.55   1.76   |  0   0   0
-  8192   |  5.34 |  0.54   1.13   4.07   |  0   0   0
- 16384   | 10.38 |  0.72   2.30  16.43   |  0   0   0
- 32768   | 20.63 |  1.44   2.35   6.51   |  0   0   0
+     Payload |  Min. | Percentile Delta (ms) | Lost
+     (bytes) |  (ms) |  0.25   0.50   1.00   | All  T   C
+     -----------------------------------------------------
+         8   |  0.93 |  0.09   0.19   2.00   |  0   0   0
+        16   |  0.95 |  0.08   0.36   1.34   |  0   0   0
+        32   |  0.95 |  0.06   0.22   1.85   |  0   0   0
+        64   |  0.98 |  0.11   0.28  10.84   |  0   0   0
+       128   |  0.99 |  0.07   0.12   1.87   |  0   0   0
+       256   |  1.04 |  0.09   0.20   2.26   |  0   0   0
+       512   |  1.11 |  0.14   0.28   2.34   |  0   0   0
+      1024   |  1.17 |  0.20   0.25   1.45   |  0   0   0
+      2048   |  1.92 |  0.42   0.55   1.58   |  0   0   0
+      4096   |  2.99 |  0.24   0.55   1.76   |  0   0   0
+      8192   |  5.34 |  0.54   1.13   4.07   |  0   0   0
+     16384   | 10.38 |  0.72   2.30  16.43   |  0   0   0
+     32768   | 20.63 |  1.44   2.35   6.51   |  0   0   0
 
  
  
