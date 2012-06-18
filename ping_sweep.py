@@ -37,18 +37,18 @@ import win32com.shell.shell
 # Helper functions.
 def percentile(data, P):
     data.sort()
-    
+
     if not hasattr(P, '__iter__'):
         P = [P]
-        
+
     val = []
     for perc in P:
         ix = int(perc*len(data))
         if ix == len(data):
             ix -= 1
-                    
+
         val.append(data[ix])
-        
+
     return val
 
 
@@ -125,10 +125,10 @@ def ping_once(sock, data_size=None, id=None):
 
     if data_size is None:
         data_size = 64
-        
+
     if id is None:
         id = 1
-        
+
     seq = 1999 # not really used here, but the TV show Space 1999! was pretty awesome when I was a kid.
 
     payload, packet = create_packet(id, seq, data_size)
@@ -179,13 +179,13 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
 
     if time_pause is None:
         time_pause = 5.  # milliseconds
-        
+
     if count_send is None:
         count_send = 25
-        
+
     if timeout is None:
         timeout = 1000.  # ms
-        
+
     # Make a socket, send a sequence of pings.
     sock = create_socket(host_name, timeout=timeout/1000.)   # note: timeout in seconds, not milliseconds.
     time_sweep_start = now()
@@ -229,7 +229,7 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
     # Subtract minimum time from later values.
     for k in range(1, len(P_times)):
         P_times[k] -= P_times[0]
-    
+
     stats = {'host_name':host_name,
              'data_size':data_size,
              'times':times,
@@ -257,7 +257,7 @@ def ping_sweep(host_name, timeout=None, size_sweep=None, time_pause=None, count_
     stats_sweep = []
     for s in size_sweep:
         stats = ping_repeat(host_name, data_size=s,
-                            timeout=timeout, 
+                            timeout=timeout,
                             time_pause=time_pause,
                             count_send=count_send)
         stats_sweep.append(stats)
@@ -266,7 +266,7 @@ def ping_sweep(host_name, timeout=None, size_sweep=None, time_pause=None, count_
             if len(stats_sweep) == 1:
                 display_results_header(stats)
             display_results_line(stats)
-            
+
     # Done.
     return stats_sweep
 
@@ -286,15 +286,15 @@ def display_results_header(stats):
     print(' timeout:     %d ms' % stats['timeout'])
     print(' pause time:  %d ms' % stats['time_pause'])
     print()
-    
+
     # Percentiles.
     P = stats['P']
 
     # Header strings.
     head_top = ' Payload |  Min. | Percentile Delta (ms) | Lost'
     head_bot = ' (bytes) |  (ms) |  %4.2f   %4.2f   %4.2f   | All  T   C '
-    head_bot = head_bot % tuple(P[1:]) 
-    
+    head_bot = head_bot % tuple(P[1:])
+
     print(head_top)
     print(head_bot)
 
@@ -323,17 +323,17 @@ def display_results_line(stats):
     val = tuple(val)
 
     print(template % val)
-    
-    
-    
+
+
+
 def main():
-    
+
     # Parse command line arguments.
     parser = argparse.ArgumentParser()
 
     parser.add_argument('host_name', action='store',
                         help='Name or IP address of host to ping')
-                        
+
     parser.add_argument( '-c', '--count', action='store', type=int, default=25,
                         help='Number of pings at each packet payload size')
 
@@ -353,18 +353,17 @@ def main():
     # This only runs with admin privileges.
     if win32com.shell.shell.IsUserAnAdmin():
         # Ok good.  Run the application: sequence of pings over range of packet sizes.
-        stats_sweep = ping_sweep(args.host_name, 
+        stats_sweep = ping_sweep(args.host_name,
                                  size_sweep=size_sweep,
-                                 count_send=args.count, 
+                                 count_send=args.count,
                                  time_pause=args.pause,
                                  timeout=args.timeout,
                                  verbosity=True)
     else:
         raise Exception('This application requires admin privileges.')
-        
+
     # Done.
-    
-                             
+
+
 if __name__ == '__main__':
     main()
-    
