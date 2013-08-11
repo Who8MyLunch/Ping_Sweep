@@ -1,15 +1,11 @@
 
-from distribute_setup import use_setuptools
-use_setuptools()
 
 from setuptools import setup, find_packages
 
-entry_points = {'console_scripts': ['ping_sweep = ping_sweep:main',
-                                    ]
-                }
+entry_points = {'console_scripts': ['ping_sweep = ping_sweep:main']}
 
 # Other stuff.
-version = '2012.05.29'
+version = '2013.08.10'
 description = 'Ping return time analysis tool'
 
 # Do it.
