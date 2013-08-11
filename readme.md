@@ -9,7 +9,7 @@ I wrote this application to help diagnose some odd network connectivity problems
 The basic idea is to ping to a remote host with increasingly larger packets.  As of right now, the 
 packet sizes start at 16 bytes and increase by factors of two up 32 bytes.  Summary results are
 generated for various percentiles of the ping times and number of packets lost.  Packets are considered
-lost for two reasons: socket timeout or corrupted payload on the echo packet.  
+lost for two reasons: socket timeout or corrupted payload on the echo packet.
 
 This application relies upon the dpkt python package (http://code.google.com/p/dpkt/).  It is included
 here as a subfolder.  Finally, this module relies upon the use of raw sockets.  You will need to run
