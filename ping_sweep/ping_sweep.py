@@ -34,7 +34,7 @@ import dpkt
 
 
 #################################################
-# Helper statistics functions.
+# Helper functions.
 def mean(data):
     """
     Compute the mean value of a sequence of numbers.
@@ -172,12 +172,12 @@ def ping_once(sock, data_size=None, pid=None):
 
 
     # Finish.
-    result = {'time_ping':time_ping,
-              'data_size':data_size,
-              'timeout':sock.gettimeout()*1000.,  # convert from seconds to milliseconds
-              'is_same_data':is_same_data,
-              'id':id,
-              'echo_id':echo_id}
+    result = {'time_ping': time_ping,
+              'data_size': data_size,
+              'timeout': sock.gettimeout()*1000.,  # convert from seconds to milliseconds
+              'is_same_data': is_same_data,
+              'id': pid,
+              'echo_id': echo_id}
 
     # Done.
     return result
@@ -191,32 +191,36 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
     data_size: size of payload in bytes.
     count_send: number of ping repetitions.
     time_pause: milliseconds between repetitions.
-    timeout: socket timeout period, seconds.
+    timeout: socket timeout period, milliseconds.
     """
 
     if not time_pause:
         time_pause = 5.  # milliseconds
 
     if not count_send:
-        count_send = 25
+        count_send = 25  # milliseconds
 
     if not timeout:
-        timeout = 1000.  # miliseconds
+        timeout = 1000.  # milliseconds
+
 
     # Make a socket, send a sequence of pings.
     sock = create_socket(host_name, timeout=timeout/1000.)   # note: timeout in seconds, not milliseconds.
     time_sweep_start = now()
     time_sleeping = 0.
+
+    # Main loop over pings.
     results = []
     for k in range(count_send):
         if k > 0:
             # Little pause between sending packets.  Try to be a little nice.
-            time.sleep(time_pause / 1000.)  # sleep in seconds, not milliseconds.
+            time.sleep(time_pause / 1000.)   # sleep in seconds, not milliseconds.
 
         res = ping_once(sock, data_size=data_size)
         results.append(res)
 
-    # Process results.
+
+    # Process the accumulated results.
     count_timeout = 0
     count_corrupt = 0
 
@@ -225,12 +229,13 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
         if res['is_same_data']:
             times.append(res['time_ping'])
         else:
-            if not res['time_ping']:
-                # Packet was lost because of timeout.  Most likely cause.
-                count_timeout += 1
-            else:
-                # Packet is considered lost since returned payload did match original.
+            if res['time_ping']:
+                # Packet is corrupt, but at least it still came back.
+                # Still considered lost since returned payload did not match original.
                 count_corrupt += 1
+            else:
+                # No return time recorded, packet never came back.  Most likely a timeout.
+                count_timeout += 1
 
 
     count_lost = count_timeout + count_corrupt
@@ -238,25 +243,25 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
 
     data_size = results[0]['data_size']
 
-    # Compute some statistics.
-    P = [0.00, 0.25, 0.50, 1.00]
-    P_times = percentile(times, P)
+    # Compute some statistics about the recorded times.
+    # P = [0.00, 0.25, 0.50, 1.00]
+    # P_times = percentile(times, P)
 
     # Subtract minimum time from later values.
-    for k in range(1, len(P_times)):
-        P_times[k] -= P_times[0]
+    # for k in range(1, len(P_times)):
+    #     P_times[k] -= P_times[0]
 
-    stats = {'host_name':host_name,
-             'data_size':data_size,
-             'times':times,
-             'timeout':res['timeout'],
-             'time_pause':time_pause,
-             'P':P,
-             'P_times':P_times,
-             'count_send':count_send,
-             'count_timeout':count_timeout,
-             'count_corrupt':count_corrupt,
-             'count_lost':count_lost}
+    stats = {'host_name': host_name,
+             'data_size': data_size,
+             'times': times,
+             'timeout': res['timeout'],
+             'time_pause': time_pause,
+             # 'P': P,
+             # 'P_times': P_times,
+             'count_send': count_send,
+             'count_timeout': count_timeout,
+             'count_corrupt': count_corrupt,
+             'count_lost': count_lost}
 
     # Done.
     return stats
@@ -267,7 +272,7 @@ def ping_sweep(host_name, timeout=None, size_sweep=None, time_pause=None, count_
     """
     Perform a sequence of pings over a range of payload sizes.
     """
-    if size_sweep is None:
+    if not size_sweep:
         size_sweep = [32, 128, 512, 2048]
 
     stats_sweep = []
@@ -286,6 +291,7 @@ def ping_sweep(host_name, timeout=None, size_sweep=None, time_pause=None, count_
     # Done.
     return stats_sweep
 
+#################################################
 
 
 def display_results_header(stats):
@@ -317,6 +323,7 @@ def display_results_header(stats):
     div = ' ' + '-' * (len(head_bot)-1)
     print(div)
 
+    # Done.
 
 
 def display_results_line(stats):
@@ -339,6 +346,8 @@ def display_results_line(stats):
     val = tuple(val)
 
     print(template % val)
+
+    # Done.
 
 #################################################
 
@@ -416,6 +425,7 @@ def main():
         raise Exception('This application requires admin privileges.')
 
     # Done.
+
 
 
 if __name__ == '__main__':
