@@ -122,8 +122,9 @@ def create_socket(host_name, timeout=None):
     sock = socket.socket(s_family, s_type, s_proto)
     sock.settimeout(timeout)
 
-    # Connect to remote host.
+    # Connect to remote host.  This will raise socket.error if can't resolve name.
     host_addr = socket.gethostbyname(host_name)
+
     port = 1  # dummy value
 
     sock.connect( (host_addr, port) )
@@ -210,6 +211,9 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
 
     # Make a socket, send a sequence of pings.
     sock = create_socket(host_name, timeout=timeout/1000.)   # note: timeout in seconds, not milliseconds.
+    if not sock:
+        return None, 0
+
     time_sweep_start = now()
     time_sleeping = 0.
 
@@ -412,15 +416,20 @@ def main():
         size_sweep = [16, 32, 64, 128, 256, 512, 1024]
         # size_sweep = [2048, 4090, 4093, 4096, 4099, 4102]
 
-    # This tools only runs with elevated privileges because we need a raw socket.
+    # This tools only runs with elevated privileges because we need access to a raw socket.
     if is_admin():
-        # Ok good.  Run the application: sequence of pings over a range of packet sizes.
-        stats_sweep = ping_sweep(args.host_name,
-                                 size_sweep=size_sweep,
-                                 count_send=args.count,
-                                 time_pause=args.pause,
-                                 timeout=args.timeout,
-                                 verbosity=True)
+        # Ok good.
+        # Run the application: sequence of pings over a range of packet sizes.
+        try:
+            stats_sweep = ping_sweep(args.host_name,
+                                     size_sweep=size_sweep,
+                                     count_send=args.count,
+                                     time_pause=args.pause,
+                                     timeout=args.timeout,
+                                     verbosity=True)
+        except socket.error:
+            print('\nOoops!  There was a problem with the socket.  Invalid address?')
+
     else:
         print('\nOops!  This application requires elevated privileges.')
         print('Please try again.')
