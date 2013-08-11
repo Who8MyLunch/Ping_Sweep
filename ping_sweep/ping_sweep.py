@@ -17,7 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""Perform a sequence of pings over a range of payload sizes
+"""
+Perform a sequence of pings over a range of payload sizes
 """
 
 from __future__ import division, print_function #, unicode_literals
@@ -31,41 +32,59 @@ import random
 
 import dpkt
 
-import win32api
-import win32com.shell.shell
+try:
+    import win32api
+    import win32com.shell.shell
+except ImportError:
+    pass
 
-# Helper functions.
-def percentile(data, P):
-    data.sort()
+#################################################
+# Helper statistics functions.
+def mean(data):
+    """
+    Compute the mean value of a sequence of numbers.
+    """
+    if not hasattr(data, '__iter__'):
+        data = [data]
 
-    if not hasattr(P, '__iter__'):
-        P = [P]
+    avg = float(sum(data)) / len(data)
 
-    val = []
-    for perc in P:
-        ix = int(perc*len(data))
-        if ix == len(data):
-            ix -= 1
+    # Done
+    return avg
 
-        val.append(data[ix])
 
-    return val
+
+def std(data):
+    """
+    Compute standard deviation of a seqence of numbers.
+    """
+
+    avg = mean(data)
+    dm2 = [ (d - avg)**2 for d in data ]
+
+    variance = mean(dm2)
+    sigma = variance**.5
+
+    # Done.
+    return sigma
+
 
 
 def now():
     """
-    Return current time, platform dependent.
+    Return wall clock time, platform dependent.
     """
     if os.sys.platform == 'win32':
         return time.clock()  # best for windows?  seems to give finer temporal resolution.
     else:
-        return time.time()  # best for Unix, others???
+        return time.time()  # best for Unix?  Please correct me if I got this wrong!
+
+#################################################
 
 
-
-def create_packet(id, seq, data_size):
+def create_packet(pid, seq, data_size):
     """
-    Create a data packet represented as a string.
+    Create a data packet from scratch.  Stored as a string.
     """
 
     # Random sequence of characters.
@@ -73,12 +92,13 @@ def create_packet(id, seq, data_size):
     for k in range(data_size):
         payload += chr(random.randint(65, 65+25))
 
-    # Create ICMP echo packet.
+    # Build the ICMP echo payload.
     echo = dpkt.icmp.ICMP.Echo()
-    echo.id = id
+    echo.id = pid
     echo.seq = seq
     echo.data = payload
 
+    # Build the ICMP packet.
     icmp = dpkt.icmp.ICMP()
     icmp.type = dpkt.icmp.ICMP_ECHO
     icmp.data = echo
@@ -87,7 +107,7 @@ def create_packet(id, seq, data_size):
     packet = str(icmp)
 
     # Done.
-    return (payload, packet)
+    return payload, packet
 
 
 
@@ -96,7 +116,7 @@ def create_socket(host_name, timeout=None):
     Make the socket and connect to remote host.
     timeout: seconds
     """
-    if timeout is None:
+    if not timeout:
         timeout = 1.0
 
     # Make the socket.
@@ -118,27 +138,27 @@ def create_socket(host_name, timeout=None):
 
 
 
-def ping_once(sock, data_size=None, id=None):
+def ping_once(sock, data_size=None, pid=None):
     """
     One ping, just one ping.
     """
 
-    if data_size is None:
+    if not data_size:
         data_size = 64
 
-    if id is None:
-        id = 1
+    if not pid:
+        pid = 1
 
-    seq = 1999 # not really used here, but the TV show Space 1999! was pretty awesome when I was a kid.
+    seq = 1999 # not really used here, but the TV show "Space 1999!"" was pretty awesome when I was a kid.
 
-    payload, packet = create_packet(id, seq, data_size)
+    payload, packet = create_packet(pid, seq, data_size)
 
     try:
         # Send it, record the time.
         sock.sendall(packet)
         time_send = now()
 
-        # Receive response, record time.
+        # Wait and receive response, record the time.
         msg_recv = sock.recv(0xffff)
         time_recv = now()
 
@@ -147,7 +167,7 @@ def ping_once(sock, data_size=None, id=None):
 
         # Process results.
         is_same_data = (payload == ip.icmp.echo.data)
-        time_ping = (time_recv - time_send)
+        time_ping = time_recv - time_send
         echo_id = ip.icmp.echo.id
 
     except socket.timeout:
@@ -155,7 +175,8 @@ def ping_once(sock, data_size=None, id=None):
         time_ping = None
         echo_id = None
 
-    # Done.
+
+    # Finish.
     result = {'time_ping':time_ping,
               'data_size':data_size,
               'timeout':sock.gettimeout()*1000.,  # convert from seconds to milliseconds
@@ -163,6 +184,7 @@ def ping_once(sock, data_size=None, id=None):
               'id':id,
               'echo_id':echo_id}
 
+    # Done.
     return result
 
 
@@ -177,14 +199,14 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
     timeout: socket timeout period, seconds.
     """
 
-    if time_pause is None:
+    if not time_pause:
         time_pause = 5.  # milliseconds
 
-    if count_send is None:
+    if not count_send:
         count_send = 25
 
-    if timeout is None:
-        timeout = 1000.  # ms
+    if not timeout:
+        timeout = 1000.  # miliseconds
 
     # Make a socket, send a sequence of pings.
     sock = create_socket(host_name, timeout=timeout/1000.)   # note: timeout in seconds, not milliseconds.
@@ -208,7 +230,7 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
         if res['is_same_data']:
             times.append(res['time_ping'])
         else:
-            if res['time_ping'] is None:
+            if not res['time_ping']:
                 # Packet was lost because of timeout.  Most likely cause.
                 count_timeout += 1
             else:
@@ -216,13 +238,12 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
                 count_corrupt += 1
 
 
-
     count_lost = count_timeout + count_corrupt
     count_recv = count_send - count_lost
 
-    # num_packets = len(times)
     data_size = results[0]['data_size']
 
+    # Compute some statistics.
     P = [0.00, 0.25, 0.50, 1.00]
     P_times = percentile(times, P)
 
