@@ -256,7 +256,7 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
              'count_lost': count_lost}
 
     # Done.
-    return stats
+    return stats, count_recv
 
 
 
@@ -270,20 +270,21 @@ def ping_sweep(host_name, timeout=None, size_sweep=None, time_pause=None, count_
     try:
         stats_sweep = []
         for s in size_sweep:
-            stats = ping_repeat(host_name, data_size=s,
-                                timeout=timeout,
-                                time_pause=time_pause,
-                                count_send=count_send)
+            stats, count_recv = ping_repeat(host_name, data_size=s,
+                                            timeout=timeout,
+                                            time_pause=time_pause,
+                                            count_send=count_send)
 
             stats_sweep.append(stats)
 
             if verbosity:
-                if len(stats_sweep) == 1:
-                    # Display the header first time through.
-                    display_results_header(stats)
+                if count_recv:
+                    if len(stats_sweep) == 1:
+                        # Display the header first time through.
+                        display_results_header(stats)
 
-                # Display line of results.
-                display_results_line(stats)
+                    # Display line of results.
+                    display_results_line(stats)
 
         print('\nDone.')
 
@@ -291,6 +292,7 @@ def ping_sweep(host_name, timeout=None, size_sweep=None, time_pause=None, count_
         print('\nUser stop!')
 
     # Done.
+    return stats_sweep
 
 #################################################
 
@@ -310,8 +312,8 @@ def display_results_header(stats):
     print()
 
     # Header strings.
-    head_A = ' Payload |       Ping Times (ms)       | Lost Packets'
-    head_B = ' (bytes) |  min    avg   [std]    max  | All  T   C '
+    head_A = ' Payload |       Ping Times (ms)         | Lost Packets'
+    head_B = ' (bytes) |  min    avg    [std]     max  | All  T   C '
 
     print(head_A)
     print(head_B)
@@ -328,7 +330,7 @@ def display_results_line(stats):
     Generate line of text for current set of results.
     """
 
-    template = '  {:5d}  |{:6.2f} {:6.2f} [{:5.2f}] {:6.2f} |{:3d} {:3d} {:3d}'
+    template = '  {:5d}  |{:6.2f} {:6.2f} [{:6.2f}] {:7.2f} |{:3d} {:3d} {:3d}'
 
     t_min = min(stats['times'])
     t_avg = mean(stats['times'])
@@ -398,14 +400,19 @@ def main():
     parser.add_argument('-t' ,'--timeout', action='store', type=float, default=1000.,
                         help='Socket timeout (ms)')
 
+    parser.add_argument('-L' ,'--large', action='store_true', default=False,
+                        help='Use additional payloads larger than 1024 bytes.')
+
     args = parser.parse_args()
 
     # Should this argument also be handled by argparse??
-    size_sweep = [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
-    # # size_sweep = [2048, 4090, 4093, 4096, 4099, 4102]
-    # # size_sweep = [16, 32, 64, 128, 256, 512, 1024, 2048, 8192, 16384, 32768]
+    if args.large:
+        size_sweep = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
+    else:
+        size_sweep = [16, 32, 64, 128, 256, 512, 1024]
+        # size_sweep = [2048, 4090, 4093, 4096, 4099, 4102]
 
-    # This only runs with elevated privileges.
+    # This tools only runs with elevated privileges because we need a raw socket.
     if is_admin():
         # Ok good.  Run the application: sequence of pings over a range of packet sizes.
         stats_sweep = ping_sweep(args.host_name,
@@ -415,7 +422,8 @@ def main():
                                  timeout=args.timeout,
                                  verbosity=True)
     else:
-        raise Exception('This application requires admin privileges.')
+        print('\nOops!  This application requires elevated privileges.')
+        print('Please try again.')
 
     # Done.
 
