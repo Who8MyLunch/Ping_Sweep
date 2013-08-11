@@ -136,6 +136,8 @@ def create_socket(host_name, timeout=None):
 def ping_once(sock, data_size=None, pid=None):
     """
     One ping, just one ping.
+
+    sock = socket created by caller.
     """
 
     if not data_size:
@@ -162,7 +164,7 @@ def ping_once(sock, data_size=None, pid=None):
 
         # Process results.
         is_same_data = (payload == ip.icmp.echo.data)
-        time_ping = time_recv - time_send
+        time_ping = (time_recv - time_send) * 1000.    # convert from seconds to milliseconds
         echo_id = ip.icmp.echo.id
 
     except socket.timeout:
@@ -203,6 +205,8 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
     if not timeout:
         timeout = 1000.  # milliseconds
 
+    if not data_size:
+        data_size = 64   # number of bytes.
 
     # Make a socket, send a sequence of pings.
     sock = create_socket(host_name, timeout=timeout/1000.)   # note: timeout in seconds, not milliseconds.
@@ -241,23 +245,11 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
     count_lost = count_timeout + count_corrupt
     count_recv = count_send - count_lost
 
-    data_size = results[0]['data_size']
-
-    # Compute some statistics about the recorded times.
-    # P = [0.00, 0.25, 0.50, 1.00]
-    # P_times = percentile(times, P)
-
-    # Subtract minimum time from later values.
-    # for k in range(1, len(P_times)):
-    #     P_times[k] -= P_times[0]
-
     stats = {'host_name': host_name,
              'data_size': data_size,
              'times': times,
-             'timeout': res['timeout'],
+             'timeout': timeout,
              'time_pause': time_pause,
-             # 'P': P,
-             # 'P_times': P_times,
              'count_send': count_send,
              'count_timeout': count_timeout,
              'count_corrupt': count_corrupt,
@@ -275,21 +267,30 @@ def ping_sweep(host_name, timeout=None, size_sweep=None, time_pause=None, count_
     if not size_sweep:
         size_sweep = [32, 128, 512, 2048]
 
-    stats_sweep = []
-    for s in size_sweep:
-        stats = ping_repeat(host_name, data_size=s,
-                            timeout=timeout,
-                            time_pause=time_pause,
-                            count_send=count_send)
-        stats_sweep.append(stats)
+    try:
+        stats_sweep = []
+        for s in size_sweep:
+            stats = ping_repeat(host_name, data_size=s,
+                                timeout=timeout,
+                                time_pause=time_pause,
+                                count_send=count_send)
 
-        if verbosity:
-            if len(stats_sweep) == 1:
-                display_results_header(stats)
-            display_results_line(stats)
+            stats_sweep.append(stats)
+
+            if verbosity:
+                if len(stats_sweep) == 1:
+                    # Display the header first time through.
+                    display_results_header(stats)
+
+                # Display line of results.
+                display_results_line(stats)
+
+        print('\nDone.')
+
+    except KeyboardInterrupt:
+        print('\nUser stop!')
 
     # Done.
-    return stats_sweep
 
 #################################################
 
@@ -300,8 +301,7 @@ def display_results_header(stats):
     """
 
     # Print.
-    print()
-    print(' Ping Sweep')
+    print('\n Ping Sweep')
     print(' ==========')
     print(' target name: %s' % stats['host_name'])
     print(' ping count:  %d' % stats['count_send'])
@@ -309,43 +309,36 @@ def display_results_header(stats):
     print(' pause time:  %d ms' % stats['time_pause'])
     print()
 
-    # Percentiles.
-    P = stats['P']
-
     # Header strings.
-    head_top = ' Payload |  Min. | Percentile Delta (ms) | Lost'
-    head_bot = ' (bytes) |  (ms) |  %4.2f   %4.2f   %4.2f   | All  T   C '
-    head_bot = head_bot % tuple(P[1:])
+    head_A = ' Payload |       Ping Times (ms)       | Lost Packets'
+    head_B = ' (bytes) |  min    avg   [std]    max  | All  T   C '
 
-    print(head_top)
-    print(head_bot)
+    print(head_A)
+    print(head_B)
 
-    div = ' ' + '-' * (len(head_bot)-1)
-    print(div)
+    head_C = ' ' + '-' * (len(head_B)-1)
+    print(head_C)
 
     # Done.
+
 
 
 def display_results_line(stats):
     """
     Generate line of text for current set of results.
     """
-    # Line output.
-    template = ' %5d   |%6.2f |%6.2f %6.2f %6.2f   |%3d %3d %3d'
 
-    num_bytes = stats['data_size']
+    template = '  {:5d}  |{:6.2f} {:6.2f} [{:5.2f}] {:6.2f} |{:3d} {:3d} {:3d}'
 
-    P_times = stats['P_times']
-    val = [num_bytes]
-    for p in P_times:
-        val.append(p*1000.)
+    t_min = min(stats['times'])
+    t_avg = mean(stats['times'])
+    t_std = std(stats['times'])
+    t_max = max(stats['times'])
 
-    val.append(stats['count_lost'])
-    val.append(stats['count_timeout'])
-    val.append(stats['count_corrupt'])
-    val = tuple(val)
+    values = stats['data_size'], t_min, t_avg, t_std, t_max, \
+             stats['count_lost'], stats['count_timeout'], stats['count_corrupt']
 
-    print(template % val)
+    print(template.format(*values))
 
     # Done.
 
