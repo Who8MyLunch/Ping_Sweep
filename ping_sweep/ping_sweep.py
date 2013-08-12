@@ -77,6 +77,33 @@ def now():
 #################################################
 
 
+def create_socket(host_name, timeout=None):
+    """
+    Make the socket and connect to remote host.
+    timeout: seconds
+    """
+    if not timeout:
+        timeout = 1.0  # seconds.
+
+    # Make the socket.
+    s_family = socket.AF_INET
+    s_type = socket.SOCK_RAW
+    s_proto = dpkt.ip.IP_PROTO_ICMP
+
+    sock = socket.socket(s_family, s_type, s_proto)
+    sock.setblocking(True)
+    sock.settimeout(timeout)
+
+    # Connect to remote host.  This will raise socket.error if can't resolve name.
+    host_addr = socket.gethostbyname(host_name)
+    port = 1  # dummy value
+
+    sock.connect( (host_addr, port) )
+
+    # Done.
+    return sock
+
+
 def create_packet(pid, seq, data_size):
     """
     Create a data packet from scratch.  Stored as a string.
@@ -106,31 +133,35 @@ def create_packet(pid, seq, data_size):
 
 
 
-def create_socket(host_name, timeout=None):
+def send(sock, msg):
     """
-    Make the socket and connect to remote host.
-    timeout: seconds
+    Send message over the socket.
     """
-    if not timeout:
-        timeout = 1.0  # seconds.
-
-    # Make the socket.
-    s_family = socket.AF_INET
-    s_type = socket.SOCK_RAW
-    s_proto = dpkt.ip.IP_PROTO_ICMP
-
-    sock = socket.socket(s_family, s_type, s_proto)
-    sock.setblocking(True)
-    sock.settimeout(timeout)
-
-    # Connect to remote host.  This will raise socket.error if can't resolve name.
-    host_addr = socket.gethostbyname(host_name)
-    port = 1  # dummy value
-
-    sock.connect( (host_addr, port) )
+    num_sent = 0
+    while num_sent < len(msg):
+        sent = sock.send(msg[num_sent:])
+        if not sent:
+            raise RuntimeError("socket connection broken")
+        num_sent = num_sent + sent
 
     # Done.
-    return sock
+    return num_sent
+
+
+
+def recv(sock, num_bytes):
+    """
+    Receive message over socket.
+    """
+    msg = ''
+    while len(msg) < num_bytes:
+        msg_chunk = sock.recv(8192)
+        if msg_chunk == '':
+            raise RuntimeError('connection ended')
+        msg = msg + msg_chunk
+
+    # Done.
+    return msg
 
 
 
@@ -156,17 +187,17 @@ def ping_once(sock, data_size=None, pid=None):
 
     try:
         # Send it, record the time.
-        sock.sendall(packet)
+        send(sock, packet)
         time_send = now()
 
         # Wait and receive response, record the time.
         # msg_recv = sock.recv(0xffff)
         # msg_recv = sock.recv(4096)
-        buf_size = 8192
-        print('a')
-        msg_recv = sock.recv(buf_size)
+        # buf_size = 8192
+        # msg_recv = sock.recv(buf_size)
+        msg_recv = recv(sock, len(packet))
         time_recv = now()
-        print('b')
+
         # Extract packet data.
         ip = dpkt.ip.IP(msg_recv)
 
@@ -184,6 +215,7 @@ def ping_once(sock, data_size=None, pid=None):
     # Finish.
     result = {'time_ping': time_ping,
               'data_size': data_size,
+              'packet_size': len(packet),
               'timeout': sock.gettimeout()*1000.,  # convert from seconds to milliseconds
               'is_same_data': is_same_data,
               'id': pid,
@@ -237,7 +269,7 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
 
 
     # Close the socket.
-    sock.shutdown()
+    sock.shutdown(socket.SHUT_RDWR)
     sock.close()
 
     # Process the accumulated results.
@@ -260,9 +292,10 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
 
     count_lost = count_timeout + count_corrupt
     count_recv = count_send - count_lost
-
+    packet_size = res['packet_size']
     stats = {'host_name': host_name,
              'data_size': data_size,
+             'packet_size': packet_size,
              'times': times,
              'timeout': timeout,
              'time_pause': time_pause,
@@ -328,8 +361,8 @@ def display_results_header(stats):
     print()
 
     # Header strings.
-    head_A = ' Payload |       Ping Times (ms)         | Lost Packets'
-    head_B = ' (bytes) |  min    avg    [std]     max  | All  T   C '
+    head_A = '  Size (bytes)  |       Ping Times (ms)         | Lost Packets'
+    head_B = ' Payload Packet |  min    avg    [std]     max  | All  T   C '
 
     print(head_A)
     print(head_B)
@@ -346,14 +379,14 @@ def display_results_line(stats):
     Generate line of text for current set of results.
     """
 
-    template = '  {:5d}  |{:6.2f} {:6.2f} [{:6.2f}] {:7.2f} |{:3d} {:3d} {:3d}'
+    template = ' {:5d}  {:5d}   |{:6.2f} {:6.2f} [{:6.2f}] {:7.2f} |{:3d} {:3d} {:3d}'
 
     t_min = min(stats['times'])
     t_avg = mean(stats['times'])
     t_std = std(stats['times'])
     t_max = max(stats['times'])
 
-    values = stats['data_size'], t_min, t_avg, t_std, t_max, \
+    values = stats['data_size'], stats['packet_size'], t_min, t_avg, t_std, t_max, \
              stats['count_lost'], stats['count_timeout'], stats['count_corrupt']
 
     print(template.format(*values))
@@ -421,11 +454,11 @@ def main():
 
     args = parser.parse_args()
 
-    # Should this argument also be handled by argparse??
+    # Use large packets?
     if args.large:
-        size_sweep = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
+        size_sweep = [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
     else:
-        size_sweep = [16, 32, 64, 128, 256, 512, 1024]
+        size_sweep = [32, 64, 128, 256, 512, 1024, 1472]
         # size_sweep = [2048, 4090, 4093, 4096, 4099, 4102]
 
     # This tools only runs with elevated privileges because we need access to a raw socket.
