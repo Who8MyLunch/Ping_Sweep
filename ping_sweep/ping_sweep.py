@@ -125,7 +125,6 @@ def create_socket(host_name, timeout=None):
 
     # Connect to remote host.  This will raise socket.error if can't resolve name.
     host_addr = socket.gethostbyname(host_name)
-
     port = 1  # dummy value
 
     sock.connect( (host_addr, port) )
@@ -141,6 +140,9 @@ def ping_once(sock, data_size=None, pid=None):
 
     sock = socket created by caller.
     """
+
+    # from IPython import embed
+    # embed()
 
     if not data_size:
         data_size = 64
@@ -160,9 +162,11 @@ def ping_once(sock, data_size=None, pid=None):
         # Wait and receive response, record the time.
         # msg_recv = sock.recv(0xffff)
         # msg_recv = sock.recv(4096)
-        msg_recv = sock.recv(data_size*2)
+        buf_size = 8192
+        print('a')
+        msg_recv = sock.recv(buf_size)
         time_recv = now()
-
+        print('b')
         # Extract packet data.
         ip = dpkt.ip.IP(msg_recv)
 
@@ -217,10 +221,8 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
     if not sock:
         return None, 0
 
-    time_sweep_start = now()
-    time_sleeping = 0.
-
     # Main loop over pings.
+    time_sweep_start = now()
     results = []
     for k in range(count_send):
         if k > 0:
@@ -228,8 +230,15 @@ def ping_repeat(host_name, data_size=None, time_pause=None, count_send=None, tim
             time.sleep(time_pause / 1000.)   # sleep in seconds, not milliseconds.
 
         res = ping_once(sock, data_size=data_size)
+        if not res:
+            raise Exception('Problem calling ping_once.')
+
         results.append(res)
 
+
+    # Close the socket.
+    sock.shutdown()
+    sock.close()
 
     # Process the accumulated results.
     count_timeout = 0
