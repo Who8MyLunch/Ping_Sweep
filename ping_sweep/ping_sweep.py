@@ -112,7 +112,7 @@ def create_socket(host_name, timeout=None):
     timeout: seconds
     """
     if not timeout:
-        timeout = 1.0
+        timeout = 1.0  # seconds.
 
     # Make the socket.
     s_family = socket.AF_INET
@@ -120,6 +120,7 @@ def create_socket(host_name, timeout=None):
     s_proto = dpkt.ip.IP_PROTO_ICMP
 
     sock = socket.socket(s_family, s_type, s_proto)
+    sock.setblocking(True)
     sock.settimeout(timeout)
 
     # Connect to remote host.  This will raise socket.error if can't resolve name.
@@ -157,7 +158,9 @@ def ping_once(sock, data_size=None, pid=None):
         time_send = now()
 
         # Wait and receive response, record the time.
-        msg_recv = sock.recv(0xffff)
+        # msg_recv = sock.recv(0xffff)
+        # msg_recv = sock.recv(4096)
+        msg_recv = sock.recv(data_size*2)
         time_recv = now()
 
         # Extract packet data.

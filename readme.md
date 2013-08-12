@@ -6,14 +6,14 @@ What and Why
 ------------
 
 I wrote this application to help diagnose some odd network connectivity problems on my home network.
-The basic idea is to ping to a remote host with increasingly larger packets.  As of right now, the 
+The basic idea is to ping to a remote host with increasingly larger packets.  As of right now, the
 packet sizes start at 16 bytes and increase by factors of two up 32 bytes.  Summary results are
 generated for various percentiles of the ping times and number of packets lost.  Packets are considered
 lost for two reasons: socket timeout or corrupted payload on the echo packet.
 
 This application relies upon the dpkt python package (http://code.google.com/p/dpkt/).  It is included
 here as a subfolder.  Finally, this module relies upon the use of raw sockets.  You will need to run
-with elevated administrator permissions on Windows.  I'm not sure about Linux.
+with elevated administrator permissions on Windows.  On Linux simply run this tool using 'sudo'.
 
 Initial inspiration for this tool came from various sources:
 - http://www.doughellmann.com/PyMOTW/asyncore/
@@ -22,8 +22,8 @@ Initial inspiration for this tool came from various sources:
 - http://www.python-forum.de/viewtopic.php?p=183720
 - http://code.activestate.com/recipes/576662/
 
-In the end I implemented this framework on my own to meet the needs of my particular problems while
-diagnosing my home network LAN.
+In the end I implemented my very own framework instead of copying one of those above.  It was fun to learn
+something new about working with sockets.
 
 
 Examples
@@ -58,12 +58,12 @@ ethernet cables in the closet:
       8192   |  6.38 |  0.25   0.73   3.42   | 10  10   0
      16384   | 10.59 |  1.08   1.82  10.66   | 15  15   0
      32768   | 19.52 |  0.68   2.14   4.26   | 17  17   0
- 
- 
+
+
 Next below is a nice result where I target my WiFi router to which I am directly connected
 now on my laptop.  There are still the occasional delayed packets, but not as many as above,
 and all packets made the round trip just fine.
- 
+
     C:\Projects\ping_sweep> .\ping_sweep.py 192.168.1.254
 
      Ping Sweep
@@ -90,5 +90,5 @@ and all packets made the round trip just fine.
      16384   | 10.38 |  0.72   2.30  16.43   |  0   0   0
      32768   | 20.63 |  1.44   2.35   6.51   |  0   0   0
 
- 
- 
+
+
