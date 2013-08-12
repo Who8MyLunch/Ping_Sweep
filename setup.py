@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 entry_points = {'console_scripts': ['ping_sweep = ping_sweep:main']}
 
 # Other stuff.
-version = '1.0'
+version = '1.0.1'
 description = 'Ping return time analysis tool'
 
 # Do it.
