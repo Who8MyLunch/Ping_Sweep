@@ -272,7 +272,7 @@ def ping_sweep(host_name, timeout=None, size_sweep=None, time_pause=None, count_
     Perform a sequence of pings over a range of payload sizes.
     """
     if not size_sweep:
-        size_sweep = [32, 128, 512, 2048]
+        size_sweep = [16, 64, 256, 1024]
 
     try:
         stats_sweep = []
