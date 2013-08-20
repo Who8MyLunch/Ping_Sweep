@@ -77,9 +77,34 @@ def now():
 #################################################
 
 
+# Define some exceptions.
+class PingSweepError(Exception):
+    def __init__(self, msg):
+        self.msg = repr(msg)
+
+    def __str__(self):
+        return repr('Ping_Sweep Error: {:s}'.format(self.msg))
+
+
+class PingSweepSocketError(PingSweepError):
+    def __str__(self):
+        return repr('Ping_Sweep Socket Error: {:s}'.format(self.msg))
+
+
+class PingSweepNameError(PingSweepError):
+    def __str__(self):
+        return repr('Ping_Sweep Name Error: {:s}'.format(self.msg))
+
+
+#################################################
+
 def create_socket(host_name, timeout=None):
     """
     Make the socket and connect to remote host.
+
+    NOTE: This function requires the user to be running as admin or root since
+    we are creating a raw socket.
+
     timeout: seconds
     """
     if not timeout:
@@ -95,8 +120,11 @@ def create_socket(host_name, timeout=None):
     sock.settimeout(timeout)
 
     # Connect to remote host.  This will raise socket.error if can't resolve name.
-    host_addr = socket.gethostbyname(host_name)
-    port = 1  # dummy value
+    try:
+        host_addr = socket.gethostbyname(host_name)
+        port = 1  # dummy value
+    except socket.error:
+        raise PingSweepNameError('Unable to create socket with name: {:s}'.format(host_name))
 
     sock.connect( (host_addr, port) )
 
@@ -404,11 +432,8 @@ def is_admin():
 
     if os.name == 'nt':
         import ctypes
-        # WARNING: requires Windows XP SP2 or higher!
         try:
-            # Warning: This call fails unless you have Windows XP SP2 or
-            # higher.
-
+            # Warning: This call fails unless you have Windows XP SP2 or higher.
             value = ctypes.windll.shell32.IsUserAnAdmin()
 
         except:
@@ -472,8 +497,8 @@ def main():
                                      time_pause=args.pause,
                                      timeout=args.timeout,
                                      verbosity=True)
-        except socket.error:
-            print('\nOoops!  There was a problem with the socket.  Invalid address?')
+        except PingSweepNameError as e:
+            print('\nOoops!  There was a problem: {:s}'.format(e.msg))
 
     else:
         print('\nOops!  This application requires elevated privileges.')
